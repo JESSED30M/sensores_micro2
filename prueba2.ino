@@ -1,7 +1,9 @@
 #include <DHT.h>
+#include <math.h>  // Para usar log10()
 
 // === Pines ===
 const int pinLM35 = A0;
+const int pinKY038 = A1;       // KY-038 salida analógica
 const int pinDHT = 2;
 const int pinTrig = 3;
 const int pinEcho = 4;
@@ -17,6 +19,7 @@ void setup() {
 
   pinMode(pinTrig, OUTPUT);
   pinMode(pinEcho, INPUT);
+
   Serial.println("Iniciando mediciones...");
 }
 
@@ -38,13 +41,18 @@ void loop() {
   digitalWrite(pinTrig, LOW);
   long duracion = pulseIn(pinEcho, HIGH);
   float distancia = duracion * 0.034 / 2;
-
-  // Filtrar valores fuera de rango o ruidosos
   if (distancia <= 0 || distancia > 400) {
-    distancia = 0; // o puedes usar -1 para indicar "sin lectura"
+    distancia = 0;
   }
 
-  // === Mostrar resultados en Serial Monitor (en vertical) ===
+  // === KY-038 ===
+  int nivelSonido = analogRead(pinKY038);  // valor entre 0 y 1023
+  if (nivelSonido < 1) nivelSonido = 1;     // evitar log10(0)
+
+  // Estimar dB (relativo, no real)
+  float dbEstimado = 20.0 * log10(nivelSonido / 1023.0);
+
+  // === Mostrar resultados ===
   Serial.println("---------------");
   Serial.print("LM35 (°C): ");
   Serial.println(tempLM35, 2);
@@ -58,10 +66,17 @@ void loop() {
   Serial.print("Distancia (cm): ");
   Serial.println(distancia, 2);
 
+  Serial.print("Nivel de sonido (KY-038): ");
+  Serial.println(nivelSonido);
+
+  Serial.print("Estimación dB (relativa): ");
+  Serial.println(dbEstimado, 2);
+
   Serial.println("---------------\n");
 
-  delay(2000); // espera 2 segundos
+  delay(2000);
 }
+
 
 
 
